@@ -31,9 +31,7 @@ endif ()
 
 
 add_executable(casparcg ${SOURCES} ${HEADERS})
-set_target_properties(casparcg PROPERTIES
-        OUTPUT_NAME "${CASPARCG_BINARY_NAME}"
-    )
+set_target_properties(casparcg PROPERTIES OUTPUT_NAME "auraview")
 target_compile_features(casparcg PRIVATE cxx_std_17)
 target_include_directories(casparcg PRIVATE
     ..
