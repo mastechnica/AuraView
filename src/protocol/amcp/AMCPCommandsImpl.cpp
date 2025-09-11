@@ -40,6 +40,9 @@
 #include <common/os/filesystem.h>
 #include <common/param.h>
 
+#include "auraview_version.h"
+#include <cstdlib>  // for std::getenv
+
 #include <core/consumer/frame_consumer.h>
 #include <core/consumer/frame_consumer_registry.h>
 #include <core/consumer/output.h>
@@ -1493,8 +1496,18 @@ std::wstring cls_command(command_context& ctx) { return make_request(ctx, "/cls"
 std::wstring fls_command(command_context& ctx) { return make_request(ctx, "/fls", L"501 FLS FAILED\r\n"); }
 
 std::wstring tls_command(command_context& ctx) { return make_request(ctx, "/tls", L"501 TLS FAILED\r\n"); }
+static std::wstring amcp_version_string()
+{
+    const bool compat = std::getenv("AURAVIEW_COMPAT_BANNER") != nullptr;
+    if (compat)
+        return L"CasparCG 2.4 (compat mode)";
+    return L"AuraView " + u16(AURAVIEW_VERSION_STRING) + L" (Server)";
+}
 
-std::wstring version_command(command_context& ctx) { return L"201 VERSION OK\r\n" + env::version() + L"\r\n"; }
+std::wstring version_command(command_context& ctx)
+{
+    return L"201 VERSION OK\r\n" + amcp_version_string() + L"\r\n";
+}
 
 struct param_visitor : public boost::static_visitor<void>
 {

@@ -24,6 +24,8 @@
 // (malloc/free, global new/delete, etc.) with the TBB memory allocator
 // as the default allocator suffers from low performance.
 
+
+#include <string>
 #if defined _DEBUG && defined _MSC_VER
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
@@ -31,7 +33,7 @@
 #elif defined _MSC_VER
 #include <tbb/tbbmalloc_proxy.h>
 #endif
-
+#include "auraview_version.h"
 #include "included_modules.h"
 #include "platform_specific.h"
 #include "server.h"
@@ -51,7 +53,8 @@
 #include <boost/property_tree/detail/file_parser_error.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/stacktrace.hpp>
-
+#include <cstdlib>
+#include <string>
 #include <atomic>
 #include <future>
 #include <thread>
@@ -60,6 +63,14 @@
 #include <csignal>
 
 namespace caspar {
+// Compose the user-visible banner. If AURAVIEW_COMPAT_BANNER is set, emit a legacy CasparCG banner.
+static std::wstring auraview_banner()
+{
+    const bool compat = std::getenv("AURAVIEW_COMPAT_BANNER") != nullptr;
+    if (compat)
+        return L"CasparCG 2.4 (compat mode)";
+    return L"AuraView " + u16(AURAVIEW_VERSION_STRING) + L" (Server)";
+}
 
 void setup_global_locale()
 {
@@ -79,12 +90,12 @@ void setup_global_locale()
 void print_info()
 {
     CASPAR_LOG(info) << L"############################################################################";
-    CASPAR_LOG(info) << L"CasparCG Server is distributed by the Swedish Broadcasting Corporation (SVT)";
+    CASPAR_LOG(info) << auraview_banner();
     CASPAR_LOG(info) << L"under the GNU General Public License GPLv3 or higher.";
     CASPAR_LOG(info) << L"Please see LICENSE.TXT for details.";
-    CASPAR_LOG(info) << L"http://www.casparcg.com/";
+    CASPAR_LOG(info) << L"http://www.auraviewsystems.com/";
     CASPAR_LOG(info) << L"############################################################################";
-    CASPAR_LOG(info) << L"Starting CasparCG Video and Graphics Playout Server " << env::version();
+    CASPAR_LOG(info) << L"Starting AuraView 1.0 Server " << env::version();
 }
 
 auto run(const std::wstring& config_file_name, std::atomic<bool>& should_wait_for_keypress)
@@ -217,7 +228,7 @@ int main(int argc, char** argv)
     // Increase process priority.
     increase_process_priority();
 
-    std::wstring config_file_name(L"casparcg.config");
+    std::wstring config_file_name(L"auraview.config");
 
     try {
         // Configure environment properties from configuration.
@@ -225,7 +236,16 @@ int main(int argc, char** argv)
             config_file_name = caspar::u16(argv[1]);
 
         log::add_cout_sink();
-        env::configure(config_file_name);
+        // If preferred config is missing, transparently fall back to legacy name (with deprecation warning)
+	if (!boost::filesystem::exists(config_file_name)) {
+	    const std::wstring legacy = L"casparcg.config";
+	    if (boost::filesystem::exists(legacy)) {
+	        CASPAR_LOG(warning) << L"Deprecated config filename 'casparcg.config' — please rename to 'auraview.config'.";
+	        config_file_name = legacy;
+	    }
+	}
+	env::configure(config_file_name);
+
 
         log::set_log_column_alignment(env::properties().get(L"configuration.log-align-columns", true));
 
@@ -242,7 +262,7 @@ int main(int argc, char** argv)
 
         // Start logging to file.
         if (env::log_to_file()) {
-            log::add_file_sink(env::log_folder() + L"caspar");
+            log::add_file_sink(env::log_folder() + L"auraview");
             std::wcout << L"Logging [" << log::get_log_level() << L"] or higher severity to " << env::log_folder()
                        << std::endl
                        << std::endl;
@@ -262,7 +282,7 @@ int main(int argc, char** argv)
         auto should_restart      = run(config_file_name, should_wait_for_keypress);
         return_code              = should_restart ? 5 : 0;
 
-        CASPAR_LOG(info) << "Successfully shutdown CasparCG Server.";
+        CASPAR_LOG(info) << "Successfully shutdown AuraView.";
 
         if (should_wait_for_keypress)
             wait_for_keypress();
@@ -289,10 +309,10 @@ int main(int argc, char** argv)
         wait_for_keypress();
     } catch (...) {
         CASPAR_LOG_CURRENT_EXCEPTION();
-        CASPAR_LOG(fatal) << L"Unhandled exception in main thread. Please report this error on the GitHub project page "
-                             L"(www.github.com/casparcg/server/issues).";
+        CASPAR_LOG(fatal) << L"Unhandled exception in main thread. Please report this error to the project maintainers "
+                             L"(www.github.com/mastechnica/server/issues).";
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        std::wcout << L"\n\nCasparCG will automatically shutdown. See the log file located at the configured log-file "
+        std::wcout << L"\n\nAuraView will automatically shutdown. See the log file located at the configured log-file "
                       L"folder for more information.\n\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
     }

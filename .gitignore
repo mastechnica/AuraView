@@ -17,4 +17,11 @@ src/.idea
 
 # debian build artifacts
 /debian
-/obj-*
+/obj-*/build/
+*/build/
+/out/
+/dist/
+/log/
+/logs/
+/*.dump
+config/auraview.config
