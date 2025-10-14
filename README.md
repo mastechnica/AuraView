@@ -14,10 +14,6 @@ System Requirements
 - Intel and AMD CPU's have been tested and are known to work
 - PCIE bandwidth is important between your GPU and CPU, as well as Decklink and CPU. Avoid chipset lanes when possible.
 
-### Windows
-
- - Only Windows 10 is supported
-
 ### Linux
 
  - Ubuntu 22.04 or 24.04 are recommended
